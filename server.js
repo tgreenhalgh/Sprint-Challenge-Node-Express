@@ -11,8 +11,50 @@ server.use(helmet()); // security features, activated!
 
 const PORT = 8000;
 
+// middleware for project constraints
+function projectConstraints(req, res, next) {
+  const NAME = req.body.name;
+  const DESCRIPTION = req.body.description;
+
+  if (!NAME || !DESCRIPTION) {
+    return next({
+      code: 400,
+      error: `Please provide a 'name' and 'description' for the new project.`,
+    });
+  }
+
+  if (NAME.length > 128) {
+    return next({
+      code: 400,
+      error: `The 'name' of the project must be fewer than 128 characters.`,
+    });
+  }
+  next();
+}
+
+// middleware for action constraints
+function actionConstraints(req, res, next) {
+  const NOTES = req.body.notes;
+  const DESCRIPTION = req.body.description;
+
+  if (!NOTES || !DESCRIPTION) {
+    return next({
+      code: 400,
+      error: `Please provide a 'description' and 'notes' for the new action.`,
+    });
+  }
+
+  if (DESCRIPTION.length > 128) {
+    return next({
+      code: 400,
+      error: `The 'description' of the action must be fewer than 128 characters.`,
+    });
+  }
+  next();
+}
+
 server.get('/', (req, res) => {
-  res.send('TADA!');
+  res.send('TADA! it is working:)');
 });
 
 // get all projects
@@ -44,16 +86,9 @@ server.get('/api/projects/:id', async (req, res, next) => {
 });
 
 // add a new project
-server.post('/api/projects', async (req, res, next) => {
+server.post('/api/projects', projectConstraints, async (req, res, next) => {
   const NAME = req.body.name;
   const DESCRIPTION = req.body.description;
-
-  if (!NAME || !DESCRIPTION) {
-    return next({
-      code: 400,
-      error: `Please provide a 'name' and 'description' for the new project.`,
-    });
-  }
 
   const project = { name: NAME, description: DESCRIPTION };
 
@@ -84,17 +119,10 @@ server.delete('/api/projects/:id', async (req, res, next) => {
 });
 
 // edit a project
-server.put('/api/projects/:id', async (req, res, next) => {
+server.put('/api/projects/:id', projectConstraints, async (req, res, next) => {
   const ID = req.params.id;
   const NAME = req.body.name;
   const DESCRIPTION = req.body.description;
-
-  if (!NAME || !DESCRIPTION) {
-    return next({
-      code: 400,
-      error: `Please provide an upated 'name' and/or 'description' for the project.`,
-    });
-  }
 
   const project = { name: NAME, description: DESCRIPTION };
 
@@ -165,60 +193,48 @@ server.delete('/api/actions/:id', async (req, res, next) => {
 });
 
 // add a new action to a project
-server.post('/api/projects/:id/actions', async (req, res, next) => {
-  const ID = req.params.id;
+server.post(
+  '/api/projects/:id/actions',
+  actionConstraints,
+  async (req, res, next) => {
+    const ID = req.params.id;
+    const NOTES = req.body.notes;
+    const DESCRIPTION = req.body.description;
 
-  const NOTES = req.body.notes;
-  const DESCRIPTION = req.body.description;
+    const action = { project_id: ID, notes: NOTES, description: DESCRIPTION };
 
-  if (!NOTES || !DESCRIPTION) {
-    return next({
-      code: 400,
-      error: `Please provide a 'description' and 'notes' for the new project.`,
-    });
-  }
-
-  const action = { project_id: ID, notes: NOTES, description: DESCRIPTION };
-
-  // check to make sure we have a project to add the action to
-  try {
-    await projectDb.get(ID);
-    // we have a project
+    // check to make sure we have a project to add the action to
     try {
-      const response = await actionDb.insert(action);
-      console.log('RESPONSE', response);
-      return res.status(200).json(`Action id:${response.id} has been added.`);
+      await projectDb.get(ID);
+      // we have a project
+      try {
+        const response = await actionDb.insert(action);
+        console.log('RESPONSE', response);
+        return res.status(200).json(`Action id:${response.id} has been added.`);
+      } catch (err) {
+        return next({
+          code: 500,
+          error: `The action could not be added.`,
+        });
+      }
     } catch (err) {
       return next({
         code: 500,
-        error: `The action could not be added.`,
+        error: `Project id:${ID} could not be retrieved.`,
       });
     }
-  } catch (err) {
-    return next({
-      code: 500,
-      error: `Project id:${ID} could not be retrieved.`,
-    });
-  }
-});
+  },
+);
 
 // edit an action
-server.put('/api/actions/:id', async (req, res, next) => {
+server.put('/api/actions/:id', actionConstraints, async (req, res, next) => {
   const ID = req.params.id;
-
   const NOTES = req.body.notes;
   const DESCRIPTION = req.body.description;
 
-  if (!NOTES || !DESCRIPTION) {
-    return next({
-      code: 400,
-      error: `Please provide updated 'description' and/or 'notes' for the action.`,
-    });
-  }
-
   const action = { notes: NOTES, description: DESCRIPTION };
 
-  // check to make sure we have a project to add the action to
+  // check to make sure we have an action to edit
   try {
     await actionDb.get(ID);
     try {
