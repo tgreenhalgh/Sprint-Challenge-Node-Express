@@ -5,6 +5,7 @@ const actionDb = require('./data/helpers/actionModel');
 const projectDb = require('./data/helpers/projectModel');
 // get my custom middleware
 const { projectConstraints, actionConstraints } = require('./middleware');
+const errors = require('./middleware/errors');
 
 const server = express();
 server.use(express.json()); // turn on express's body parser
@@ -180,32 +181,32 @@ server.delete('/api/actions/:id', async (req, res, next) => {
 // add a new action to a project
 /* prettier-ignore */
 server.post('/api/projects/:id/actions', actionConstraints, async (req, res, next) => {
-    const ID = req.params.id;
-    const NOTES = req.body.notes;
-    const DESCRIPTION = req.body.description;
-
-    const action = { project_id: ID, notes: NOTES, description: DESCRIPTION };
-
-    // check to make sure we have a project to add the action to
+  const ID = req.params.id;
+  const NOTES = req.body.notes;
+  const DESCRIPTION = req.body.description;
+  
+  const action = { project_id: ID, notes: NOTES, description: DESCRIPTION };
+  
+  // check to make sure we have a project to add the action to
+  try {
+    await projectDb.get(ID);
+    // we have a project
     try {
-      await projectDb.get(ID);
-      // we have a project
-      try {
-        const response = await actionDb.insert(action);
-        return res.status(200).json(`Action id:${response.id} has been added.`);
-      } catch (err) {
-        return next({
-          code: 500,
-          error: `The action could not be added.`,
-        });
-      }
+      const response = await actionDb.insert(action);
+      return res.status(200).json(`Action id:${response.id} has been added.`);
     } catch (err) {
       return next({
         code: 500,
-        error: `Project id:${ID} could not be retrieved.`,
+        error: `The action could not be added.`,
       });
     }
-  },
+  } catch (err) {
+    return next({
+      code: 500,
+      error: `Project id:${ID} could not be retrieved.`,
+    });
+  }
+},
 );
 
 // edit an action
@@ -237,27 +238,7 @@ server.put('/api/actions/:id', actionConstraints, async (req, res, next) => {
 });
 
 // error handling
-server.use((err, req, res, next) => {
-  switch (err.code) {
-    case 400:
-      res.status(400).json({
-        error: err.error,
-      });
-      return;
-
-    case 500:
-      res.status(500).json({
-        error: err.error,
-      });
-      return;
-
-    default:
-      res.status(400).json({
-        error: 'Something weird has happened!',
-      });
-      return;
-  }
-});
+server.use(errors);
 
 // not found - 404
 server.use((req, res) =>
