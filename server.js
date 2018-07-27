@@ -85,6 +85,30 @@ server.get('/api/projects/:id', async (req, res, next) => {
   }
 });
 
+// display an individual project's actions
+server.get('/api/projects/:id/actions', async (req, res, next) => {
+  const ID = req.params.id;
+
+  try {
+    const response = await projectDb.get(ID);
+    try {
+      const response = await projectDb.getProjectActions(ID);
+      console.log('RESPONSE', response);
+      return res.status(200).json(response);
+    } catch (err) {
+      return next({
+        code: 500,
+        error: `Project id:${ID}'s actions could not be retrieved.`,
+      });
+    }
+  } catch (err) {
+    return next({
+      code: 500,
+      error: `Project id:${ID} could not be retrieved.`,
+    });
+  }
+});
+
 // add a new project
 server.post('/api/projects', projectConstraints, async (req, res, next) => {
   const NAME = req.body.name;
