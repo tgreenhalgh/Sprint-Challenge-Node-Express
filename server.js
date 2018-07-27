@@ -83,6 +83,44 @@ server.delete('/api/projects/:id', async (req, res, next) => {
   }
 });
 
+// edit a project
+server.put('/api/projects/:id', async (req, res, next) => {
+  const ID = req.params.id;
+  const NAME = req.body.name;
+  const DESCRIPTION = req.body.description;
+
+  if (!NAME || !DESCRIPTION) {
+    return next({
+      code: 400,
+      error: `Please provide an upated 'name' and/or 'description' for the project.`,
+    });
+  }
+
+  const project = { name: NAME, description: DESCRIPTION };
+
+  // make sure we have the project to edit
+  try {
+    await projectDb.get(ID);
+    // we have a project
+    try {
+      const response = await projectDb.update(ID, project);
+      return res
+        .status(200)
+        .json(`Project id:${response.id} has been updated.`);
+    } catch (err) {
+      return next({
+        code: 500,
+        error: `The project could not be updated.`,
+      });
+    }
+  } catch (err) {
+    return next({
+      code: 500,
+      error: `Project id:${ID} could not be retrieved.`,
+    });
+  }
+});
+
 // get all actions
 server.get('/api/actions', async (req, res, next) => {
   try {
@@ -160,6 +198,42 @@ server.post('/api/projects/:id/actions', async (req, res, next) => {
     return next({
       code: 500,
       error: `Project id:${ID} could not be retrieved.`,
+    });
+  }
+});
+
+// edit an action
+server.put('/api/actions/:id', async (req, res, next) => {
+  const ID = req.params.id;
+
+  const NOTES = req.body.notes;
+  const DESCRIPTION = req.body.description;
+
+  if (!NOTES || !DESCRIPTION) {
+    return next({
+      code: 400,
+      error: `Please provide updated 'description' and/or 'notes' for the action.`,
+    });
+  }
+
+  const action = { notes: NOTES, description: DESCRIPTION };
+
+  // check to make sure we have a project to add the action to
+  try {
+    await actionDb.get(ID);
+    try {
+      const response = await actionDb.update(ID, action);
+      return res.status(200).json(`Action id:${response.id} has been updated.`);
+    } catch (err) {
+      return next({
+        code: 500,
+        error: `The action could not be updated.`,
+      });
+    }
+  } catch (err) {
+    return next({
+      code: 500,
+      error: `Action id:${ID} could not be retrieved.`,
     });
   }
 });
