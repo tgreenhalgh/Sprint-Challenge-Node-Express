@@ -14,7 +14,7 @@ Amongst other things, we learned about routing and middleware.
 
 ## What is Middleware?
 
-A function that returns a function. In the case of node/express, it gives the coder a chance to make changes to the flow of data in the request-response cycle. `Next()` must be included for the flow to continue. Useful for things like checking authentication status.
+A function that returns a function. In the case of node/express, it gives the coder a chance to make changes to the flow of data in the request-response cycle. `Next()` must be included for the flow to continue. Useful for things like checking authentication status and error handling.
 
 ## What is a Resource?
 
