@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const actionDb = require('./data/helpers/actionModel');
 const projectDb = require('./data/helpers/projectModel');
+// get my custom middleware
 const { projectConstraints, actionConstraints } = require('./middleware');
 
 const server = express();
@@ -54,7 +55,6 @@ server.get('/api/projects/:id/actions', async (req, res, next) => {
     // have the project, get the associated actions
     try {
       const response = await projectDb.getProjectActions(ID);
-      console.log('RESPONSE', response);
       return res.status(200).json(response);
     } catch (err) {
       return next({
@@ -192,7 +192,6 @@ server.post('/api/projects/:id/actions', actionConstraints, async (req, res, nex
       // we have a project
       try {
         const response = await actionDb.insert(action);
-        console.log('RESPONSE', response);
         return res.status(200).json(`Action id:${response.id} has been added.`);
       } catch (err) {
         return next({
