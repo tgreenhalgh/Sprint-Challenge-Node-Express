@@ -89,8 +89,10 @@ server.get('/api/projects/:id', async (req, res, next) => {
 server.get('/api/projects/:id/actions', async (req, res, next) => {
   const ID = req.params.id;
 
+  // make sure we have the project
   try {
-    const response = await projectDb.get(ID);
+    await projectDb.get(ID);
+    // have the project, get the associated actions
     try {
       const response = await projectDb.getProjectActions(ID);
       console.log('RESPONSE', response);
@@ -133,7 +135,7 @@ server.delete('/api/projects/:id', async (req, res, next) => {
 
   try {
     const response = await projectDb.remove(ID);
-    // response = 0, not deleted, 1 deleted
+    // response = 0 not deleted, 1 deleted
     if (response)
       return res.status(200).json(`Project id:${ID} has been deleted.`);
     else return next({ code: 500, error: `Project id:${ID} does not exist.` });
@@ -217,10 +219,8 @@ server.delete('/api/actions/:id', async (req, res, next) => {
 });
 
 // add a new action to a project
-server.post(
-  '/api/projects/:id/actions',
-  actionConstraints,
-  async (req, res, next) => {
+/* prettier-ignore */
+server.post('/api/projects/:id/actions', actionConstraints, async (req, res, next) => {
     const ID = req.params.id;
     const NOTES = req.body.notes;
     const DESCRIPTION = req.body.description;
