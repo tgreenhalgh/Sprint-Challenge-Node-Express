@@ -68,6 +68,21 @@ server.post('/api/projects', async (req, res, next) => {
   }
 });
 
+// delete a project
+server.delete('/api/projects/:id', async (req, res, next) => {
+  const ID = req.params.id;
+
+  try {
+    const response = await projectDb.remove(ID);
+    // response = 0, not deleted, 1 deleted
+    if (response)
+      return res.status(200).json(`Project id:${ID} has been deleted.`);
+    else return next({ code: 500, error: `Project id:${ID} does not exist.` });
+  } catch (err) {
+    return next({ code: 500, error: `Project id:${ID} could not be deleted.` });
+  }
+});
+
 // get all actions
 server.get('/api/actions', async (req, res, next) => {
   try {
@@ -93,6 +108,21 @@ server.get('/api/actions/:id', async (req, res, next) => {
       code: 500,
       error: `Action id:${ID} could not be retrieved.`,
     });
+  }
+});
+
+// delete an action
+server.delete('/api/actions/:id', async (req, res, next) => {
+  const ID = req.params.id;
+
+  try {
+    const response = await actionDb.remove(ID);
+    // response = 0, not deleted, 1 deleted
+    if (response)
+      return res.status(200).json(`Action id:${ID} has been deleted.`);
+    else return next({ code: 500, error: `Action id:${ID} does not exist.` });
+  } catch (err) {
+    return next({ code: 500, error: `Action id:${ID} could not be deleted.` });
   }
 });
 
